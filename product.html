@@ -21,27 +21,60 @@
       text-align: center;
     }
     .container {
-      max-width: 900px;
+      max-width: 1000px;
       margin: 30px auto;
       background: #fff;
       padding: 20px;
       border-radius: 8px;
+      display: flex;
+      gap: 30px;
+      flex-wrap: wrap;
     }
-    img {
-      max-width: 100%;
+    .gallery {
+      flex: 1;
+    }
+    .gallery img {
+      width: 100%;
       height: 300px;
       object-fit: contain;
+      margin-bottom: 10px;
+      border-radius: 6px;
+      background: #fafafa;
+    }
+    .details {
+      flex: 1;
     }
     h1 {
-      margin-top: 20px;
+      margin-top: 0;
     }
     .price {
       font-size: 22px;
       font-weight: bold;
-      margin: 15px 0;
+      margin: 10px 0;
+    }
+    .badge {
+      display: inline-block;
+      padding: 5px 10px;
+      border-radius: 4px;
+      color: #fff;
+      font-size: 14px;
+      margin-bottom: 10px;
+    }
+    .in { background: green; }
+    .out { background: red; }
+    label {
+      font-weight: bold;
+      display: block;
+      margin-top: 10px;
+    }
+    input {
+      width: 100%;
+      padding: 8px;
+      margin-top: 5px;
     }
     .whatsapp-btn {
       display: inline-block;
+      margin-top: 15px;
       padding: 12px 18px;
       background: #25D366;
       color: #fff;
@@ -66,22 +99,12 @@
   <h2>Mercedes Spare Parts Kenya</h2>
 </header>
 
-<div class="container">
-  <img id="product-image" src="" alt="">
-  <h1 id="product-name">Loading...</h1>
-  <p class="price" id="product-price"></p>
-
-  <a
-    id="whatsapp-link"
-    class="whatsapp-btn"
-    target="_blank"
-    href="#">
-    Order on WhatsApp
-  </a>
+<div class="container" id="product-container">
+  Loading product…
 </div>
 
 <footer>
-  © 2025 Mercedes Spare Parts Kenya
+  © 2025 Mercedes Spare Parts Kenya · Phone: 0721 484 898
 </footer>
 
 <script type="module">
@@ -91,10 +114,7 @@
   const firebaseConfig = {
     apiKey: "AIzaSyB0jwVp8pyF_hW9NqkmZQt6RidrRW3y8Zg",
     authDomain: "mercedes-spares-admin.firebaseapp.com",
-    projectId: "mercedes-spares-admin",
-    storageBucket: "mercedes-spares-admin.firebasestorage.app",
-    messagingSenderId: "174618017514",
-    appId: "1:174618017514:web:622eda306b309d18bc6193"
+    projectId: "mercedes-spares-admin"
   };
 
   const app = initializeApp(firebaseConfig);
@@ -104,30 +124,54 @@
   const productId = params.get("id");
 
   if (!productId) {
-    document.body.innerHTML = "<h2 style='text-align:center'>Product not found</h2>";
+    document.getElementById("product-container").innerHTML =
+      "<h2>Product not found</h2>";
   }
 
   const productRef = doc(db, "products", productId);
   const productSnap = await getDoc(productRef);
 
-  if (productSnap.exists()) {
-    const p = productSnap.data();
-
-    document.getElementById("product-name").innerText = p.name;
-    document.getElementById("product-price").innerText = "KES " + p.price;
-    document.getElementById("product-image").src = p.image;
-    document.getElementById("product-image").alt = p.name;
-
-    document.title = p.name + " | Mercedes Spare Parts Kenya";
-    document.getElementById("meta-desc").content =
-      p.name + " available in Kenya at KES " + p.price + ". Order on WhatsApp.";
-
-    document.getElementById("whatsapp-link").href =
-      "https://wa.me/254721484898?text=I'm interested in " + encodeURIComponent(p.name);
+  if (!productSnap.exists()) {
+    document.getElementById("product-container").innerHTML =
+      "<h2>Product not found</h2>";
   } else {
-    document.body.innerHTML = "<h2 style='text-align:center'>Product not found</h2>";
+    const p = productSnap.data();
+    const badgeClass = p.stockStatus === "In Stock" ? "in" : "out";
+
+    document.title = `${p.name} | Mercedes Spare Parts Kenya`;
+    document.getElementById("meta-desc").content =
+      `${p.name} available in Kenya at KES ${p.price}. Order on WhatsApp.`;
+
+    document.getElementById("product-container").innerHTML = `
+      <div class="gallery">
+        ${p.images.map(img => `<img src="${img}" alt="${p.name}">`).join("")}
+      </div>
+
+      <div class="details">
+        <h1>${p.name}</h1>
+        <div class="price">KES ${p.price}</div>
+        <div class="badge ${badgeClass}">${p.stockStatus}</div>
+
+        <p><strong>Part Number:</strong> ${p.partNumber || "-"}</p>
+        <p><strong>Condition:</strong> ${p.condition || "-"}</p>
+        <p><strong>Category:</strong> ${p.category || "-"}</p>
+
+        <p><strong>Compatibility:</strong><br>${p.compatibility || "-"}</p>
+        <p><strong>Description:</strong><br>${p.description || "-"}</p>
+
+        <label>Quantity</label>
+        <input type="number" id="qty" min="1" max="${p.quantity || 1}" value="1">
+
+        <a class="whatsapp-btn" target="_blank"
+          href="https://wa.me/254721484898?text=${encodeURIComponent(
+            `Hello, I want to order:\n${p.name}\nPart No: ${p.partNumber}\nPrice: KES ${p.price}`
+          )}">
+          Order on WhatsApp
+        </a>
+      </div>
+    `;
   }
 </script>
 
 </body>
-</html>s
+</html>
