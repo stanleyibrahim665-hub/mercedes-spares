@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <title>Mercedes Spare Parts Kenya</title>
-  <meta name="description" content="Buy genuine Mercedes spare parts in Kenya. Headlamps, body parts, suspension and more. Order via WhatsApp.">
+  <meta name="description" content="Buy genuine Mercedes spare parts in Kenya. Search by part number or name. Order via WhatsApp.">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
 
   <style>
@@ -15,11 +15,24 @@
     header {
       background: #000;
       color: #fff;
-      padding: 15px;
+      padding: 20px;
       text-align: center;
+    }
+    .search-box {
+      max-width: 600px;
+      margin: 15px auto 0;
+    }
+    .search-box input {
+      width: 100%;
+      padding: 12px;
+      font-size: 16px;
+      border-radius: 6px;
+      border: none;
     }
     .products {
       padding: 20px;
+      max-width: 1200px;
+      margin: auto;
     }
     .product-grid {
       display: grid;
@@ -61,7 +74,15 @@
 
 <header>
   <h1>Mercedes Spare Parts Kenya</h1>
-  <p>Click a product to view details & order</p>
+  <p>Search by part number or name</p>
+
+  <div class="search-box">
+    <input
+      type="text"
+      id="searchInput"
+      placeholder="e.g. C200 headlamp or A2048200261"
+    >
+  </div>
 </header>
 
 <section class="products">
@@ -70,7 +91,7 @@
 </section>
 
 <footer>
-  © 2025 Mercedes Spare Parts Kenya
+  © 2025 Mercedes Spare Parts Kenya · Phone: 0721 484 898
 </footer>
 
 <script type="module">
@@ -80,29 +101,53 @@
   const firebaseConfig = {
     apiKey: "AIzaSyB0jwVp8pyF_hW9NqkmZQt6RidrRW3y8Zg",
     authDomain: "mercedes-spares-admin.firebaseapp.com",
-    projectId: "mercedes-spares-admin",
-    storageBucket: "mercedes-spares-admin.firebasestorage.app",
-    messagingSenderId: "174618017514",
-    appId: "1:174618017514:web:622eda306b309d18bc6193"
+    projectId: "mercedes-spares-admin"
   };
 
   const app = initializeApp(firebaseConfig);
   const db = getFirestore(app);
 
   const productList = document.getElementById("product-list");
+  const searchInput = document.getElementById("searchInput");
+
+  let allProducts = [];
 
   const snapshot = await getDocs(collection(db, "products"));
-
   snapshot.forEach(doc => {
-    const p = doc.data();
-    productList.innerHTML += `
-      <div class="product-card" onclick="location.href='product.html?id=${doc.id}'">
-        <img src="${p.image}" alt="${p.name}">
-        <h3>${p.name}</h3>
-        <p class="price">KES ${p.price}</p>
-      </div>
-    `;
+    allProducts.push({ id: doc.id, ...doc.data() });
   });
+
+  renderProducts(allProducts);
+
+  searchInput.addEventListener("input", () => {
+    const q = searchInput.value.toLowerCase();
+
+    const filtered = allProducts.filter(p =>
+      p.name.toLowerCase().includes(q) ||
+      (p.partNumber && p.partNumber.toLowerCase().includes(q))
+    );
+
+    renderProducts(filtered);
+  });
+
+  function renderProducts(products) {
+    productList.innerHTML = "";
+
+    if (products.length === 0) {
+      productList.innerHTML = "<p>No products found</p>";
+      return;
+    }
+
+    products.forEach(p => {
+      productList.innerHTML += `
+        <div class="product-card" onclick="location.href='product.html?id=${p.id}'">
+          <img src="${p.images[0]}" alt="${p.name}">
+          <h3>${p.name}</h3>
+          <p class="price">KES ${p.price}</p>
+        </div>
+      `;
+    });
+  }
 </script>
 
 </body>
