@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <title>Mercedes Spare Parts Kenya</title>
-  <meta name="description" content="Buy genuine Mercedes spare parts in Kenya. Headlamps, engines, suspension parts and more. Order via WhatsApp.">
+  <meta name="description" content="Buy genuine Mercedes spare parts in Kenya. Headlamps, body parts, suspension and more. Order via WhatsApp.">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
 
   <style>
@@ -32,6 +32,11 @@
       border-radius: 8px;
       text-align: center;
       box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+      cursor: pointer;
+      transition: transform 0.2s;
+    }
+    .product-card:hover {
+      transform: scale(1.03);
     }
     .product-card img {
       max-width: 100%;
@@ -41,15 +46,6 @@
     .price {
       font-weight: bold;
       margin: 10px 0;
-    }
-    .whatsapp-btn {
-      display: inline-block;
-      padding: 10px 15px;
-      background: #25D366;
-      color: #fff;
-      text-decoration: none;
-      border-radius: 5px;
-      font-weight: bold;
     }
     footer {
       background: #000;
@@ -65,7 +61,7 @@
 
 <header>
   <h1>Mercedes Spare Parts Kenya</h1>
-  <p>Genuine Mercedes parts • Order via WhatsApp</p>
+  <p>Click a product to view details & order</p>
 </header>
 
 <section class="products">
@@ -100,16 +96,10 @@
   snapshot.forEach(doc => {
     const p = doc.data();
     productList.innerHTML += `
-      <div class="product-card">
+      <div class="product-card" onclick="location.href='product.html?id=${doc.id}'">
         <img src="${p.image}" alt="${p.name}">
         <h3>${p.name}</h3>
         <p class="price">KES ${p.price}</p>
-        <a
-          class="whatsapp-btn"
-          target="_blank"
-          href="https://wa.me/254721484898?text=I'm interested in ${encodeURIComponent(p.name)}">
-          Order on WhatsApp
-        </a>
       </div>
     `;
   });
