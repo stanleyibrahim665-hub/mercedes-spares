@@ -1,104 +1,119 @@
 <!DOCTYPE html>
 <html lang="en">
-
 <head>
   <meta charset="UTF-8">
-
-  <title>Mercedes Spare Parts Kenya | Headlamps, Bumpers & Engine Parts</title>
-
-  <meta name="description" content="Buy Mercedes spare parts in Kenya. Genuine & replacement C200 parts including headlamps, bumpers, radiators and engine components. Order via WhatsApp in Nairobi.">
-
-  <meta name="keywords" content="Mercedes spare parts Kenya, Mercedes C200 headlamp, Mercedes bumper price Kenya, Mercedes parts Nairobi">
-
+  <title>Mercedes Spare Parts Kenya</title>
+  <meta name="description" content="Buy genuine Mercedes spare parts in Kenya. Headlamps, engines, suspension parts and more. Order via WhatsApp.">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
 
   <style>
     body {
       font-family: Arial, sans-serif;
+      margin: 0;
       background: #f5f5f5;
-      padding: 20px;
     }
-    h1 {
+    header {
+      background: #000;
+      color: #fff;
+      padding: 15px;
       text-align: center;
     }
-    .product {
+    .products {
+      padding: 20px;
+    }
+    .product-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+      gap: 20px;
+    }
+    .product-card {
       background: #fff;
-      max-width: 600px;
-      margin: 15px auto;
       padding: 15px;
       border-radius: 8px;
       text-align: center;
+      box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+    }
+    .product-card img {
+      max-width: 100%;
+      height: 160px;
+      object-fit: contain;
     }
     .price {
-      color: green;
       font-weight: bold;
+      margin: 10px 0;
     }
-    .btn {
+    .whatsapp-btn {
       display: inline-block;
       padding: 10px 15px;
-      background: black;
-      color: white;
+      background: #25D366;
+      color: #fff;
       text-decoration: none;
       border-radius: 5px;
+      font-weight: bold;
+    }
+    footer {
+      background: #000;
+      color: #fff;
+      text-align: center;
+      padding: 15px;
+      margin-top: 30px;
     }
   </style>
 </head>
 
 <body>
 
-<h1>Mercedes Spare Parts Kenya</h1>
-<p style="text-align:center;">Order Genuine Mercedes Parts via WhatsApp</p>
+<header>
+  <h1>Mercedes Spare Parts Kenya</h1>
+  <p>Genuine Mercedes parts • Order via WhatsApp</p>
+</header>
 
-<div class="product">
-  <h2>Mercedes C200 Headlamp Left</h2>
-  <p>Part Number: A2059068201</p>
-  <p class="price">KES 45,000</p>
-  <a class="btn" href="mercedes-c200-headlamp-left.html">View Product</a>
-</div>
+<section class="products">
+  <h2>Available Spare Parts</h2>
+  <div id="product-list" class="product-grid"></div>
+</section>
 
-<div class="product">
-  <h2>Mercedes C200 Headlamp Right</h2>
-  <p>Part Number: A2059068301</p>
-  <p class="price">KES 45,000</p>
-  <a class="btn" href="mercedes-c200-headlamp-right.html">View Product</a>
-</div>
-
-<div class="product">
-  <h2>Mercedes C200 Front Bumper</h2>
-  <p>Part Number: A2058850025</p>
-  <p class="price">KES 55,000</p>
-  <a class="btn" href="mercedes-c200-front-bumper.html">View Product</a>
-</div>
-
-<div class="product">
-  <h2>Mercedes C200 Rear Bumper</h2>
-  <p>Part Number: A2058850125</p>
-  <p class="price">KES 52,000</p>
-  <a class="btn" href="mercedes-c200-rear-bumper.html">View Product</a>
-</div>
-
-<div class="product">
-  <h2>Mercedes C200 Fog Lamp</h2>
-  <p>Part Number: A2059069000</p>
-  <p class="price">KES 18,000</p>
-  <a class="btn" href="mercedes-c200-fog-lamp.html">View Product</a>
-</div>
-
-<div class="product">
-  <h2>Mercedes C200 Radiator</h2>
-  <p>Part Number: A2055000203</p>
-  <p class="price">KES 35,000</p>
-  <a class="btn" href="mercedes-c200-radiator.html">View Product</a>
-</div>
-
-<hr>
-
-<footer style="text-align:center; padding:20px; background:#fff;">
-  <p><strong>Mercedes Spare Parts Kenya</strong></p>
-  <p>📍 Nairobi, Kenya</p>
-  <p>📞 WhatsApp: +254 7XX XXX XXX</p>
-  <p>Genuine & replacement Mercedes-Benz spare parts</p>
+<footer>
+  © 2025 Mercedes Spare Parts Kenya
 </footer>
+
+<script type="module">
+  import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
+  import { getFirestore, collection, getDocs } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
+
+  const firebaseConfig = {
+    apiKey: "AIzaSyB0jwVp8pyF_hW9NqkmZQt6RidrRW3y8Zg",
+    authDomain: "mercedes-spares-admin.firebaseapp.com",
+    projectId: "mercedes-spares-admin",
+    storageBucket: "mercedes-spares-admin.firebasestorage.app",
+    messagingSenderId: "174618017514",
+    appId: "1:174618017514:web:622eda306b309d18bc6193"
+  };
+
+  const app = initializeApp(firebaseConfig);
+  const db = getFirestore(app);
+
+  const productList = document.getElementById("product-list");
+
+  const snapshot = await getDocs(collection(db, "products"));
+
+  snapshot.forEach(doc => {
+    const p = doc.data();
+    productList.innerHTML += `
+      <div class="product-card">
+        <img src="${p.image}" alt="${p.name}">
+        <h3>${p.name}</h3>
+        <p class="price">KES ${p.price}</p>
+        <a
+          class="whatsapp-btn"
+          target="_blank"
+          href="https://wa.me/254721484898?text=I'm interested in ${encodeURIComponent(p.name)}">
+          Order on WhatsApp
+        </a>
+      </div>
+    `;
+  });
+</script>
 
 </body>
 </html>
