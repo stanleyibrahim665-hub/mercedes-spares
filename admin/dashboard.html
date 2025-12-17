@@ -4,30 +4,139 @@
   <meta charset="UTF-8">
   <title>Admin Dashboard</title>
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <style>
+    body { font-family: Arial; padding: 20px; }
+    input, textarea, select, button {
+      width: 100%;
+      padding: 10px;
+      margin-bottom: 10px;
+    }
+    .product {
+      border: 1px solid #ccc;
+      padding: 10px;
+      margin-bottom: 10px;
+    }
+  </style>
 </head>
 
-<body style="font-family:Arial; padding:20px;">
+<body>
 
-  <h2>Product Dashboard</h2>
+<h2>Admin Dashboard</h2>
+<button onclick="logout()">Logout</button>
+<hr>
 
-  <button onclick="logout()">Logout</button>
-  <hr>
+<h3>Add Product</h3>
 
-  <h3>Add Product</h3>
+<input type="text" id="name" placeholder="Product name">
+<input type="text" id="partNumber" placeholder="Part number (e.g. A2048200261)">
+<input type="number" id="price" placeholder="Price (KES)">
 
-  <input id="name" placeholder="Product Name"><br><br>
-  <input id="price" placeholder="Price (KES)"><br><br>
-  <input id="image" placeholder="Image URL"><br><br>
+<select id="condition">
+  <option value="">Select condition</option>
+  <option value="New">New</option>
+  <option value="Used">Used</option>
+  <option value="Second Hand">Second Hand</option>
+</select>
 
-  <button onclick="addProduct()">Add Product</button>
+<select id="stockStatus">
+  <option value="In Stock">In Stock</option>
+  <option value="Out of Stock">Out of Stock</option>
+</select>
 
-  <h3>Products</h3>
-  <div id="productList"></div>
+<input type="number" id="quantity" placeholder="Quantity available">
 
-  <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
-  <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-auth-compat.js"></script>
-  <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore-compat.js"></script>
-  <script src="admin.js"></script>
+<select id="category">
+  <option value="">Select category</option>
+  <option value="Headlamp">Headlamp</option>
+  <option value="Bumper">Bumper</option>
+  <option value="Engine">Engine</option>
+  <option value="Gearbox">Gearbox</option>
+  <option value="Suspension">Suspension</option>
+  <option value="Interior">Interior</option>
+</select>
+
+<textarea id="compatibility" placeholder="Compatible vehicles (e.g. C200 W204 2008–2014)"></textarea>
+<textarea id="description" placeholder="Product details / notes"></textarea>
+<textarea id="images" placeholder="Image URLs (one per line)"></textarea>
+
+<button onclick="addProduct()">Add Product</button>
+
+<hr>
+
+<h3>Products</h3>
+<div id="productList"></div>
+
+<!-- Firebase -->
+<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-auth-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore-compat.js"></script>
+
+<script>
+  const firebaseConfig = {
+    apiKey: "AIzaSyB0jwVp8pyF_hW9NqkmZQt6RidrRW3y8Zg",
+    authDomain: "mercedes-spares-admin.firebaseapp.com",
+    projectId: "mercedes-spares-admin",
+    storageBucket: "mercedes-spares-admin.firebasestorage.app",
+    messagingSenderId: "174618017514",
+    appId: "1:174618017514:web:622eda306b309d18bc6193"
+  };
+
+  firebase.initializeApp(firebaseConfig);
+
+  const auth = firebase.auth();
+  const db = firebase.firestore();
+
+  function logout() {
+    auth.signOut().then(() => location.href = "index.html");
+  }
+
+  async function addProduct() {
+    const images = document.getElementById("images").value
+      .split("\n")
+      .map(i => i.trim())
+      .filter(i => i !== "");
+
+    if (!document.getElementById("name").value || images.length === 0) {
+      alert("Product name and at least one image are required");
+      return;
+    }
+
+    await db.collection("products").add({
+      name: document.getElementById("name").value,
+      partNumber: document.getElementById("partNumber").value,
+      price: Number(document.getElementById("price").value),
+      condition: document.getElementById("condition").value,
+      stockStatus: document.getElementById("stockStatus").value,
+      quantity: Number(document.getElementById("quantity").value),
+      category: document.getElementById("category").value,
+      compatibility: document.getElementById("compatibility").value,
+      description: document.getElementById("description").value,
+      images: images,
+      createdAt: new Date()
+    });
+
+    alert("Product added");
+    location.reload();
+  }
+
+  db.collection("products").orderBy("createdAt", "desc").onSnapshot(snapshot => {
+    const list = document.getElementById("productList");
+    list.innerHTML = "";
+    snapshot.forEach(doc => {
+      const p = doc.data();
+      list.innerHTML += `
+        <div class="product">
+          <strong>${p.name}</strong><br>
+          ${p.partNumber || ""}<br>
+          KES ${p.price}<br>
+          ${p.stockStatus} | Qty: ${p.quantity || 0}<br>
+          ${p.condition || ""}<br>
+          ${p.category || ""}<br>
+        </div>
+      `;
+    });
+  });
+</script>
 
 </body>
 </html>
