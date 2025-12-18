@@ -20,7 +20,7 @@
     }
     .search-box {
       max-width: 600px;
-      margin: 15px auto 0;
+      margin: 15px auto 10px;
     }
     .search-box input {
       width: 100%;
@@ -28,6 +28,23 @@
       font-size: 16px;
       border-radius: 6px;
       border: none;
+    }
+    .categories {
+      text-align: center;
+      margin-top: 10px;
+    }
+    .categories button {
+      margin: 5px;
+      padding: 8px 14px;
+      border: none;
+      border-radius: 20px;
+      cursor: pointer;
+      background: #ddd;
+      font-size: 14px;
+    }
+    .categories button.active {
+      background: #25D366;
+      color: #fff;
     }
     .products {
       padding: 20px;
@@ -83,6 +100,16 @@
       placeholder="e.g. C200 headlamp or A2048200261"
     >
   </div>
+
+  <div class="categories" id="categoryButtons">
+    <button class="active" onclick="setCategory('All')">All</button>
+    <button onclick="setCategory('Headlamp')">Headlamp</button>
+    <button onclick="setCategory('Bumper')">Bumper</button>
+    <button onclick="setCategory('Engine')">Engine</button>
+    <button onclick="setCategory('Gearbox')">Gearbox</button>
+    <button onclick="setCategory('Suspension')">Suspension</button>
+    <button onclick="setCategory('Interior')">Interior</button>
+  </div>
 </header>
 
 <section class="products">
@@ -109,26 +136,48 @@
 
   const productList = document.getElementById("product-list");
   const searchInput = document.getElementById("searchInput");
+  const categoryButtons = document.getElementById("categoryButtons");
 
   let allProducts = [];
+  let currentCategory = "All";
 
   const snapshot = await getDocs(collection(db, "products"));
   snapshot.forEach(doc => {
     allProducts.push({ id: doc.id, ...doc.data() });
   });
 
-  renderProducts(allProducts);
+  applyFilters();
 
-  searchInput.addEventListener("input", () => {
+  searchInput.addEventListener("input", applyFilters);
+
+  window.setCategory = function(category) {
+    currentCategory = category;
+
+    [...categoryButtons.children].forEach(btn =>
+      btn.classList.remove("active")
+    );
+    event.target.classList.add("active");
+
+    applyFilters();
+  };
+
+  function applyFilters() {
     const q = searchInput.value.toLowerCase();
 
-    const filtered = allProducts.filter(p =>
-      p.name.toLowerCase().includes(q) ||
-      (p.partNumber && p.partNumber.toLowerCase().includes(q))
-    );
+    const filtered = allProducts.filter(p => {
+      const matchesSearch =
+        p.name.toLowerCase().includes(q) ||
+        (p.partNumber && p.partNumber.toLowerCase().includes(q));
+
+      const matchesCategory =
+        currentCategory === "All" ||
+        (p.category && p.category === currentCategory);
+
+      return matchesSearch && matchesCategory;
+    });
 
     renderProducts(filtered);
-  });
+  }
 
   function renderProducts(products) {
     productList.innerHTML = "";
@@ -141,7 +190,7 @@
     products.forEach(p => {
       productList.innerHTML += `
         <div class="product-card" onclick="location.href='product.html?id=${p.id}'">
-          <img src="${p.images[0]}" alt="${p.name}">
+          <img src="${p.images?.[0] || ''}" alt="${p.name}">
           <h3>${p.name}</h3>
           <p class="price">KES ${p.price}</p>
         </div>
