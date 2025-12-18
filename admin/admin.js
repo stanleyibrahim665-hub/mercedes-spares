@@ -72,3 +72,23 @@ adminSearch.addEventListener("input", async () => {
 });
 
 loadProducts();
+async function saveCompany() {
+  await db.collection("settings").doc("company").set({
+    name: companyName.value,
+    phone: companyPhone.value,
+    email: companyEmail.value,
+    address: companyAddress.value
+  });
+
+  alert("Company info saved");
+}
+
+// Load company info on admin open
+db.collection("settings").doc("company").get().then(doc => {
+  if (!doc.exists) return;
+  const c = doc.data();
+  companyName.value = c.name || "";
+  companyPhone.value = c.phone || "";
+  companyEmail.value = c.email || "";
+  companyAddress.value = c.address || "";
+});

@@ -6,89 +6,16 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
 
   <style>
-    body {
-      font-family: Arial, sans-serif;
-      margin: 0;
-      background: #f5f5f5;
-    }
-    header {
-      background: #000;
-      color: #fff;
-      padding: 15px;
-      text-align: center;
-    }
-    .container {
-      max-width: 1000px;
-      margin: 25px auto;
-      background: #fff;
-      padding: 20px;
-      border-radius: 8px;
-    }
-    .gallery {
-      display: flex;
-      gap: 10px;
-      overflow-x: auto;
-    }
-    .gallery img {
-      height: 260px;
-      object-fit: contain;
-      border: 1px solid #ddd;
-      border-radius: 6px;
-      padding: 5px;
-      background: #fff;
-    }
-    h1 {
-      margin-top: 20px;
-    }
-    .price {
-      font-size: 22px;
-      font-weight: bold;
-      margin: 10px 0;
-    }
-    .badge {
-      display: inline-block;
-      padding: 6px 12px;
-      border-radius: 20px;
-      font-size: 14px;
-      margin-bottom: 10px;
-      color: #fff;
-    }
-    .in-stock {
-      background: green;
-    }
-    .out-stock {
-      background: red;
-    }
-    .info {
-      margin: 10px 0;
-      font-size: 15px;
-    }
-    .qty {
-      margin: 15px 0;
-    }
-    .qty input {
-      width: 80px;
-      padding: 8px;
-      font-size: 16px;
-    }
-    .whatsapp-btn {
-      display: inline-block;
-      padding: 14px 20px;
-      background: #25D366;
-      color: #fff;
-      text-decoration: none;
-      border-radius: 6px;
-      font-weight: bold;
-      font-size: 16px;
-      margin-top: 15px;
-    }
-    footer {
-      background: #000;
-      color: #fff;
-      text-align: center;
-      padding: 15px;
-      margin-top: 40px;
-    }
+    body { font-family: Arial; margin:0; background:#f5f5f5 }
+    header { background:#000; color:#fff; padding:15px; text-align:center }
+    .container { max-width:1000px; margin:25px auto; background:#fff; padding:20px; border-radius:8px }
+    .gallery { display:flex; gap:10px; overflow-x:auto }
+    .gallery img { height:260px; object-fit:contain; border:1px solid #ddd; border-radius:6px; padding:5px }
+    .price { font-size:22px; font-weight:bold }
+    .badge { padding:6px 12px; border-radius:20px; color:#fff }
+    .in { background:green }
+    .out { background:red }
+    footer { background:#000; color:#fff; text-align:center; padding:15px; margin-top:40px }
   </style>
 </head>
 
@@ -103,41 +30,35 @@
   <div class="gallery" id="gallery"></div>
 
   <h1 id="name">Loading...</h1>
-
-  <div id="stockBadge"></div>
-
+  <div id="stock"></div>
   <p class="price" id="price"></p>
 
-  <div class="info"><strong>Condition:</strong> <span id="condition"></span></div>
-  <div class="info"><strong>Compatibility:</strong> <span id="compatibility"></span></div>
+  <p><b>Condition:</b> <span id="condition"></span></p>
+  <p><b>Compatibility:</b> <span id="compatibility"></span></p>
 
-  <div class="qty">
-    <strong>Quantity:</strong>
+  <p>
+    <b>Quantity:</b>
     <input type="number" id="qty" value="1" min="1">
-  </div>
+  </p>
 
-  <a id="whatsapp" class="whatsapp-btn" target="_blank">
+  <a id="whatsapp" target="_blank"
+     style="display:inline-block;padding:14px 20px;background:#25D366;color:#fff;text-decoration:none;border-radius:6px">
     Order on WhatsApp
   </a>
 
 </div>
-<hr style="margin:40px 0">
 
-<h3>Recommended Products</h3>
+<h3 style="text-align:center">Recommended Products</h3>
+<div id="recommended" style="display:grid;grid-template-columns:repeat(auto-fit,minmax(180px,1fr));gap:15px;padding:20px"></div>
 
-<div id="recommended" style="
-  display:grid;
-  grid-template-columns:repeat(auto-fit,minmax(180px,1fr));
-  gap:15px;
-"></div>
-
-<footer>
-  © 2025 Mercedes Spare Parts Kenya · Phone: 0721 484 898
-</footer>
+<footer id="siteFooter">Loading company info…</footer>
 
 <script type="module">
   import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
-  import { getFirestore, doc, getDoc } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
+  import {
+    getFirestore, doc, getDoc,
+    collection, getDocs, query, limit
+  } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
 
   const firebaseConfig = {
     apiKey: "AIzaSyB0jwVp8pyF_hW9NqkmZQt6RidrRW3y8Zg",
@@ -152,83 +73,58 @@
   if (!id) document.body.innerHTML = "Product not found";
 
   const snap = await getDoc(doc(db, "products", id));
-
-  if (!snap.exists()) {
-    document.body.innerHTML = "Product not found";
-  }
+  if (!snap.exists()) document.body.innerHTML = "Product not found";
 
   const p = snap.data();
 
-  document.getElementById("name").innerText = p.name;
-  document.getElementById("price").innerText = "KES " + p.price;
+  name.innerText = p.name;
+  price.innerText = "KES " + p.price;
+  condition.innerText = p.condition || "Not specified";
+  compatibility.innerText = p.compatibility || "Mercedes-Benz";
 
-  // Images
-  const gallery = document.getElementById("gallery");
-  (p.images || []).forEach(img => {
-    gallery.innerHTML += `<img src="${img}" alt="${p.name}">`;
-  });
+  stock.innerHTML = p.inStock === false
+    ? `<span class="badge out">Out of stock</span>`
+    : `<span class="badge in">In stock</span>`;
 
-  // Stock
-  const stockBadge = document.getElementById("stockBadge");
-  if (p.inStock === false) {
-    stockBadge.innerHTML = `<span class="badge out-stock">Out of Stock</span>`;
-  } else {
-    stockBadge.innerHTML = `<span class="badge in-stock">In Stock</span>`;
-  }
+  (p.images || []).forEach(img =>
+    gallery.innerHTML += `<img src="${img}">`
+  );
 
-  // Condition & compatibility
-  document.getElementById("condition").innerText = p.condition || "Not specified";
-  document.getElementById("compatibility").innerText = p.compatibility || "Mercedes-Benz";
-
-  // WhatsApp
-  const qtyInput = document.getElementById("qty");
-  const whatsapp = document.getElementById("whatsapp");
-
-  function updateWhatsapp() {
-    const qty = qtyInput.value;
+  function updateWA() {
     whatsapp.href =
       `https://wa.me/254721484898?text=` +
-      encodeURIComponent(
-        `Hello, I want ${qty} piece(s) of:\n${p.name}\nPrice: KES ${p.price}`
-      );
+      encodeURIComponent(`Hello, I want ${qty.value} of ${p.name}`);
   }
+  qty.oninput = updateWA;
+  updateWA();
 
-  qtyInput.addEventListener("input", updateWhatsapp);
-  updateWhatsapp();
-import { collection, getDocs, query, limit } 
-from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
+  // Recommended
+  const recSnap = await getDocs(query(collection(db,"products"), limit(6)));
+  recSnap.forEach(d => {
+    if (d.id === id) return;
+    const r = d.data();
+    if (p.category && r.category && p.category !== r.category) return;
 
-const recommendedBox = document.getElementById("recommended");
+    recommended.innerHTML += `
+      <div onclick="location.href='product.html?id=${d.id}'"
+           style="background:#fff;padding:10px;cursor:pointer">
+        <img src="${r.images?.[0]}" style="height:120px;width:100%;object-fit:contain">
+        <p>${r.name}</p>
+        <b>KES ${r.price}</b>
+      </div>`;
+  });
 
-// Load similar products
-const q = query(collection(db, "products"), limit(6));
-const recSnap = await getDocs(q);
-
-recSnap.forEach(docu => {
-  if (docu.id === id) return;
-
-  const r = docu.data();
-
-  // Match category if available
-  if (p.category && r.category && p.category !== r.category) return;
-
-  recommendedBox.innerHTML += `
-    <div style="
-      background:#fff;
-      padding:10px;
-      border-radius:6px;
-      cursor:pointer;
-      text-align:center;
-      box-shadow:0 2px 6px rgba(0,0,0,0.1)
-    " onclick="location.href='product.html?id=${docu.id}'">
-      <img src="${r.images?.[0] || r.image}" 
-           style="height:120px;object-fit:contain;width:100%">
-      <p style="font-size:14px;margin:8px 0">${r.name}</p>
-      <strong>KES ${r.price}</strong>
-    </div>
-  `;
-});
-
+  // FOOTER (STEP 6C)
+  const footerSnap = await getDoc(doc(db,"settings","company"));
+  if (footerSnap.exists()) {
+    const c = footerSnap.data();
+    siteFooter.innerHTML = `
+      <b>${c.name}</b><br>
+      ${c.address || ""}<br>
+      Phone: ${c.phone || ""}<br>
+      Email: ${c.email || ""}
+    `;
+  }
 </script>
 
 </body>
