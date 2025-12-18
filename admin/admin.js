@@ -9,6 +9,8 @@ firebase.initializeApp(firebaseConfig);
 const auth = firebase.auth();
 const db = firebase.firestore();
 
+let editingId = null;
+
 auth.onAuthStateChanged(user => {
   if (!user) location.href = "login.html";
 });
@@ -27,68 +29,68 @@ async function addProduct() {
     compatibility: compatibility.value,
     inStock: inStock.checked,
     images: images.value.split(",").map(i => i.trim()),
-    createdAt: new Date()
+    updatedAt: new Date()
   };
 
-  await db.collection("products").add(data);
-  alert("Product saved");
+  if (editingId) {
+    await db.collection("products").doc(editingId).update(data);
+    editingId = null;
+    alert("Product updated");
+  } else {
+    data.createdAt = new Date();
+    await db.collection("products").add(data);
+    alert("Product added");
+  }
+
+  clearForm();
   loadProducts();
 }
 
+function clearForm() {
+  name.value = "";
+  price.value = "";
+  partNumber.value = "";
+  compatibility.value = "";
+  images.value = "";
+  inStock.checked = true;
+}
+
 async function loadProducts() {
-  const snap = await db.collection("products").orderBy("createdAt","desc").get();
+  const snap = await db.collection("products").orderBy("updatedAt","desc").get();
   productList.innerHTML = "";
 
   snap.forEach(doc => {
     const p = doc.data();
     productList.innerHTML += `
-      <div class="product">
-        <strong>${p.name}</strong><br>
-        ${p.partNumber || ""} · ${p.category} · ${p.inStock ? "In stock" : "Out"}
+      <div style="border-bottom:1px solid #ddd;padding:10px">
+        <b>${p.name}</b> — KES ${p.price}<br>
+        ${p.partNumber || ""} · ${p.category} · ${p.inStock ? "In stock" : "Out"}<br>
+        <button onclick="editProduct('${doc.id}')">Edit</button>
+        <button onclick="deleteProduct('${doc.id}')">Delete</button>
       </div>
     `;
   });
 }
 
-adminSearch.addEventListener("input", async () => {
-  const q = adminSearch.value.toLowerCase();
-  const snap = await db.collection("products").get();
+async function editProduct(id) {
+  const docSnap = await db.collection("products").doc(id).get();
+  const p = docSnap.data();
 
-  productList.innerHTML = "";
-  snap.forEach(doc => {
-    const p = doc.data();
-    if (
-      p.name.toLowerCase().includes(q) ||
-      (p.partNumber && p.partNumber.toLowerCase().includes(q))
-    ) {
-      productList.innerHTML += `
-        <div class="product">
-          <strong>${p.name}</strong><br>
-          ${p.partNumber || ""}
-        </div>
-      `;
-    }
-  });
-});
-
-loadProducts();
-async function saveCompany() {
-  await db.collection("settings").doc("company").set({
-    name: companyName.value,
-    phone: companyPhone.value,
-    email: companyEmail.value,
-    address: companyAddress.value
-  });
-
-  alert("Company info saved");
+  editingId = id;
+  name.value = p.name;
+  price.value = p.price;
+  partNumber.value = p.partNumber || "";
+  category.value = p.category;
+  condition.value = p.condition;
+  compatibility.value = p.compatibility || "";
+  images.value = (p.images || []).join(", ");
+  inStock.checked = p.inStock !== false;
 }
 
-// Load company info on admin open
-db.collection("settings").doc("company").get().then(doc => {
-  if (!doc.exists) return;
-  const c = doc.data();
-  companyName.value = c.name || "";
-  companyPhone.value = c.phone || "";
-  companyEmail.value = c.email || "";
-  companyAddress.value = c.address || "";
-});
+async function deleteProduct(id) {
+  if (!confirm("Delete this product?")) return;
+  await db.collection("products").doc(id).delete();
+  loadProducts();
+}
+
+loadProducts();
