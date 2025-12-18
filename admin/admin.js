@@ -1,117 +1,96 @@
+// Firebase config
 const firebaseConfig = {
   apiKey: "AIzaSyB0jwVp8pyF_hW9NqkmZQt6RidrRW3y8Zg",
   authDomain: "mercedes-spares-admin.firebaseapp.com",
   projectId: "mercedes-spares-admin"
 };
 
+// Init Firebase
 firebase.initializeApp(firebaseConfig);
 
 const auth = firebase.auth();
 const db = firebase.firestore();
 
-let editingId = null;
-let allProducts = [];
-
-// Auth check
+// Require login
 auth.onAuthStateChanged(user => {
-  if (!user) location.href = "login.html";
+  if (!user) {
+    location.href = "index.html";
+  } else {
+    loadProducts();
+    loadCompany();
+  }
 });
 
+// LOGOUT
 function logout() {
   auth.signOut();
 }
 
 // ADD / UPDATE PRODUCT
+let editingId = null;
+
 async function addProduct() {
   const data = {
-    name: name.value.trim(),
-    price: price.value.trim(),
-    partNumber: partNumber.value.trim(),
-    category: category.value,
-    condition: condition.value,
-    compatibility: compatibility.value.trim(),
-    inStock: inStock.checked,
-    images: images.value.split(",").map(i => i.trim()).filter(Boolean),
-    updatedAt: new Date()
+    name: document.getElementById("name").value,
+    price: Number(document.getElementById("price").value),
+    partNumber: document.getElementById("partNumber").value,
+    category: document.getElementById("category").value,
+    condition: document.getElementById("condition").value,
+    compatibility: document.getElementById("compatibility").value,
+    inStock: document.getElementById("inStock").checked,
+    images: document.getElementById("images").value
+      .split(",")
+      .map(i => i.trim())
+      .filter(i => i),
+    updatedAt: firebase.firestore.FieldValue.serverTimestamp()
   };
 
-  if (!data.name || !data.price) {
-    alert("Name and price required");
-    return;
-  }
+  try {
+    if (editingId) {
+      await db.collection("products").doc(editingId).update(data);
+      editingId = null;
+      alert("Product updated");
+    } else {
+      data.createdAt = firebase.firestore.FieldValue.serverTimestamp();
+      await db.collection("products").add(data);
+      alert("Product added");
+    }
 
-  if (editingId) {
-    await db.collection("products").doc(editingId).update(data);
-    editingId = null;
-    alert("Product updated");
-  } else {
-    data.createdAt = new Date();
-    await db.collection("products").add(data);
-    alert("Product added");
-  }
+    clearForm();
+    loadProducts();
 
-  clearForm();
-  loadProducts();
+  } catch (err) {
+    alert("ERROR: " + err.message);
+  }
 }
 
 // CLEAR FORM
 function clearForm() {
-  name.value = "";
-  price.value = "";
-  partNumber.value = "";
-  compatibility.value = "";
-  images.value = "";
-  inStock.checked = true;
+  ["name","price","partNumber","compatibility","images"]
+    .forEach(id => document.getElementById(id).value = "");
+  document.getElementById("inStock").checked = true;
 }
 
-// LOAD PRODUCTS (IMPORTANT)
+// LOAD PRODUCTS + QUICK SEARCH
 async function loadProducts() {
-  const snap = await db.collection("products").orderBy("updatedAt", "desc").get();
-  allProducts = [];
+  const list = document.getElementById("productList");
+  const snap = await db.collection("products").orderBy("updatedAt","desc").get();
+  list.innerHTML = "";
 
   snap.forEach(doc => {
-    allProducts.push({ id: doc.id, ...doc.data() });
-  });
-
-  renderProducts(allProducts);
-}
-
-// RENDER PRODUCTS
-function renderProducts(list) {
-  productList.innerHTML = "";
-
-  if (list.length === 0) {
-    productList.innerHTML = "<p>No products found</p>";
-    return;
-  }
-
-  list.forEach(p => {
-    productList.innerHTML += `
+    const p = doc.data();
+    list.innerHTML += `
       <div class="product">
         <b>${p.name}</b> — KES ${p.price}<br>
-        ${p.partNumber || ""} · ${p.category} · ${p.inStock ? "In stock" : "Out of stock"}<br>
-        <button onclick="editProduct('${p.id}')">Edit</button>
-        <button onclick="deleteProduct('${p.id}')">Delete</button>
+        ${p.partNumber || ""} · ${p.category} · ${p.inStock ? "In stock" : "Out"}<br>
+        <button onclick="editProduct('${doc.id}')">Edit</button>
+        <button onclick="deleteProduct('${doc.id}')">Delete</button>
       </div>
     `;
   });
 }
 
-// QUICK SEARCH (THIS WAS MISSING)
-const adminSearch = document.getElementById("adminSearch");
-
-adminSearch.addEventListener("input", () => {
-  const q = adminSearch.value.toLowerCase();
-
-  const filtered = allProducts.filter(p =>
-    p.name.toLowerCase().includes(q) ||
-    (p.partNumber && p.partNumber.toLowerCase().includes(q))
-  );
-
-  renderProducts(filtered);
-});
-
-// EDIT
+// EDIT PRODUCT
 async function editProduct(id) {
   const snap = await db.collection("products").doc(id).get();
   const p = snap.data();
@@ -127,12 +106,33 @@ async function editProduct(id) {
   inStock.checked = p.inStock !== false;
 }
 
-// DELETE
+// DELETE PRODUCT
 async function deleteProduct(id) {
-  if (!confirm("Delete this product?")) return;
+  if (!confirm("Delete product?")) return;
   await db.collection("products").doc(id).delete();
   loadProducts();
 }
 
-// INIT
-loadProducts();
+// COMPANY INFO
+async function saveCompany() {
+  const data = {
+    name: companyName.value,
+    phone: companyPhone.value,
+    email: companyEmail.value,
+    address: companyAddress.value
+  };
+
+  await db.collection("settings").doc("company").set(data);
+  alert("Company info saved");
+}
+
+async function loadCompany() {
+  const snap = await db.collection("settings").doc("company").get();
+  if (!snap.exists()) return;
+
+  const c = snap.data();
+  companyName.value = c.name || "";
+  companyPhone.value = c.phone || "";
+  companyEmail.value = c.email || "";
+  companyAddress.value = c.address || "";
+}
