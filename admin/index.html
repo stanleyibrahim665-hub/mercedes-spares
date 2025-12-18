@@ -4,22 +4,76 @@
   <meta charset="UTF-8">
   <title>Admin Login | Mercedes Spares</title>
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+  <style>
+    body {
+      font-family: Arial;
+      background:#f5f5f5;
+      display:flex;
+      justify-content:center;
+      align-items:center;
+      height:100vh;
+    }
+    .box {
+      background:#fff;
+      padding:25px;
+      border-radius:8px;
+      width:320px;
+      box-shadow:0 2px 10px rgba(0,0,0,.15);
+    }
+    input, button {
+      width:100%;
+      padding:10px;
+      margin:8px 0;
+    }
+    button {
+      background:black;
+      color:white;
+      border:none;
+      cursor:pointer;
+    }
+  </style>
 </head>
 
-<body style="font-family:Arial; text-align:center; padding:40px;">
+<body>
 
-  <h2>Admin Login</h2>
+<div class="box">
+  <h3>Admin Login</h3>
 
-  <input id="email" type="email" placeholder="Email"><br><br>
-  <input id="password" type="password" placeholder="Password"><br><br>
+  <input id="email" type="email" placeholder="Email">
+  <input id="password" type="password" placeholder="Password">
 
   <button onclick="login()">Login</button>
 
-  <p id="status"></p>
+  <p id="status" style="color:red"></p>
+</div>
 
-  <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
-  <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-auth-compat.js"></script>
-  <script src="admin.js"></script>
+<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-auth-compat.js"></script>
+
+<script>
+  const firebaseConfig = {
+    apiKey: "AIzaSyB0jwVp8pyF_hW9NqkmZQt6RidrRW3y8Zg",
+    authDomain: "mercedes-spares-admin.firebaseapp.com",
+    projectId: "mercedes-spares-admin"
+  };
+
+  firebase.initializeApp(firebaseConfig);
+  const auth = firebase.auth();
+
+  function login() {
+    const email = document.getElementById("email").value;
+    const password = document.getElementById("password").value;
+
+    auth.signInWithEmailAndPassword(email, password)
+      .then(() => {
+        location.href = "dashboard.html";
+      })
+      .catch(err => {
+        document.getElementById("status").innerText = err.message;
+      });
+  }
+</script>
 
 </body>
 </html>
