@@ -2,11 +2,8 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8">
-  <title>Product Details | Mercedes Spare Parts Kenya</title>
+  <title>Product | Mercedes Spare Parts Kenya</title>
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-
-  <!-- SEO -->
-  <meta name="description" id="meta-desc" content="Mercedes spare part available in Kenya. Order via WhatsApp.">
 
   <style>
     body {
@@ -22,30 +19,26 @@
     }
     .container {
       max-width: 1000px;
-      margin: 30px auto;
+      margin: 25px auto;
       background: #fff;
       padding: 20px;
       border-radius: 8px;
-      display: flex;
-      gap: 30px;
-      flex-wrap: wrap;
     }
     .gallery {
-      flex: 1;
+      display: flex;
+      gap: 10px;
+      overflow-x: auto;
     }
     .gallery img {
-      width: 100%;
-      height: 300px;
+      height: 260px;
       object-fit: contain;
-      margin-bottom: 10px;
+      border: 1px solid #ddd;
       border-radius: 6px;
-      background: #fafafa;
-    }
-    .details {
-      flex: 1;
+      padding: 5px;
+      background: #fff;
     }
     h1 {
-      margin-top: 0;
+      margin-top: 20px;
     }
     .price {
       font-size: 22px;
@@ -54,34 +47,40 @@
     }
     .badge {
       display: inline-block;
-      padding: 5px 10px;
-      border-radius: 4px;
-      color: #fff;
+      padding: 6px 12px;
+      border-radius: 20px;
       font-size: 14px;
       margin-bottom: 10px;
+      color: #fff;
     }
-    .in { background: green; }
-    .out { background: red; }
-    label {
-      font-weight: bold;
-      display: block;
-      margin-top: 10px;
+    .in-stock {
+      background: green;
     }
-    input {
-      width: 100%;
+    .out-stock {
+      background: red;
+    }
+    .info {
+      margin: 10px 0;
+      font-size: 15px;
+    }
+    .qty {
+      margin: 15px 0;
+    }
+    .qty input {
+      width: 80px;
       padding: 8px;
-      margin-top: 5px;
+      font-size: 16px;
     }
     .whatsapp-btn {
       display: inline-block;
-      margin-top: 15px;
-      padding: 12px 18px;
+      padding: 14px 20px;
       background: #25D366;
       color: #fff;
       text-decoration: none;
       border-radius: 6px;
       font-weight: bold;
       font-size: 16px;
+      margin-top: 15px;
     }
     footer {
       background: #000;
@@ -99,9 +98,38 @@
   <h2>Mercedes Spare Parts Kenya</h2>
 </header>
 
-<div class="container" id="product-container">
-  Loading product…
+<div class="container">
+
+  <div class="gallery" id="gallery"></div>
+
+  <h1 id="name">Loading...</h1>
+
+  <div id="stockBadge"></div>
+
+  <p class="price" id="price"></p>
+
+  <div class="info"><strong>Condition:</strong> <span id="condition"></span></div>
+  <div class="info"><strong>Compatibility:</strong> <span id="compatibility"></span></div>
+
+  <div class="qty">
+    <strong>Quantity:</strong>
+    <input type="number" id="qty" value="1" min="1">
+  </div>
+
+  <a id="whatsapp" class="whatsapp-btn" target="_blank">
+    Order on WhatsApp
+  </a>
+
 </div>
+<hr style="margin:40px 0">
+
+<h3>Recommended Products</h3>
+
+<div id="recommended" style="
+  display:grid;
+  grid-template-columns:repeat(auto-fit,minmax(180px,1fr));
+  gap:15px;
+"></div>
 
 <footer>
   © 2025 Mercedes Spare Parts Kenya · Phone: 0721 484 898
@@ -120,57 +148,87 @@
   const app = initializeApp(firebaseConfig);
   const db = getFirestore(app);
 
-  const params = new URLSearchParams(window.location.search);
-  const productId = params.get("id");
+  const id = new URLSearchParams(window.location.search).get("id");
+  if (!id) document.body.innerHTML = "Product not found";
 
-  if (!productId) {
-    document.getElementById("product-container").innerHTML =
-      "<h2>Product not found</h2>";
+  const snap = await getDoc(doc(db, "products", id));
+
+  if (!snap.exists()) {
+    document.body.innerHTML = "Product not found";
   }
 
-  const productRef = doc(db, "products", productId);
-  const productSnap = await getDoc(productRef);
+  const p = snap.data();
 
-  if (!productSnap.exists()) {
-    document.getElementById("product-container").innerHTML =
-      "<h2>Product not found</h2>";
+  document.getElementById("name").innerText = p.name;
+  document.getElementById("price").innerText = "KES " + p.price;
+
+  // Images
+  const gallery = document.getElementById("gallery");
+  (p.images || []).forEach(img => {
+    gallery.innerHTML += `<img src="${img}" alt="${p.name}">`;
+  });
+
+  // Stock
+  const stockBadge = document.getElementById("stockBadge");
+  if (p.inStock === false) {
+    stockBadge.innerHTML = `<span class="badge out-stock">Out of Stock</span>`;
   } else {
-    const p = productSnap.data();
-    const badgeClass = p.stockStatus === "In Stock" ? "in" : "out";
-
-    document.title = `${p.name} | Mercedes Spare Parts Kenya`;
-    document.getElementById("meta-desc").content =
-      `${p.name} available in Kenya at KES ${p.price}. Order on WhatsApp.`;
-
-    document.getElementById("product-container").innerHTML = `
-      <div class="gallery">
-        ${p.images.map(img => `<img src="${img}" alt="${p.name}">`).join("")}
-      </div>
-
-      <div class="details">
-        <h1>${p.name}</h1>
-        <div class="price">KES ${p.price}</div>
-        <div class="badge ${badgeClass}">${p.stockStatus}</div>
-
-        <p><strong>Part Number:</strong> ${p.partNumber || "-"}</p>
-        <p><strong>Condition:</strong> ${p.condition || "-"}</p>
-        <p><strong>Category:</strong> ${p.category || "-"}</p>
-
-        <p><strong>Compatibility:</strong><br>${p.compatibility || "-"}</p>
-        <p><strong>Description:</strong><br>${p.description || "-"}</p>
-
-        <label>Quantity</label>
-        <input type="number" id="qty" min="1" max="${p.quantity || 1}" value="1">
-
-        <a class="whatsapp-btn" target="_blank"
-          href="https://wa.me/254721484898?text=${encodeURIComponent(
-            `Hello, I want to order:\n${p.name}\nPart No: ${p.partNumber}\nPrice: KES ${p.price}`
-          )}">
-          Order on WhatsApp
-        </a>
-      </div>
-    `;
+    stockBadge.innerHTML = `<span class="badge in-stock">In Stock</span>`;
   }
+
+  // Condition & compatibility
+  document.getElementById("condition").innerText = p.condition || "Not specified";
+  document.getElementById("compatibility").innerText = p.compatibility || "Mercedes-Benz";
+
+  // WhatsApp
+  const qtyInput = document.getElementById("qty");
+  const whatsapp = document.getElementById("whatsapp");
+
+  function updateWhatsapp() {
+    const qty = qtyInput.value;
+    whatsapp.href =
+      `https://wa.me/254721484898?text=` +
+      encodeURIComponent(
+        `Hello, I want ${qty} piece(s) of:\n${p.name}\nPrice: KES ${p.price}`
+      );
+  }
+
+  qtyInput.addEventListener("input", updateWhatsapp);
+  updateWhatsapp();
+import { collection, getDocs, query, limit } 
+from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
+
+const recommendedBox = document.getElementById("recommended");
+
+// Load similar products
+const q = query(collection(db, "products"), limit(6));
+const recSnap = await getDocs(q);
+
+recSnap.forEach(docu => {
+  if (docu.id === id) return;
+
+  const r = docu.data();
+
+  // Match category if available
+  if (p.category && r.category && p.category !== r.category) return;
+
+  recommendedBox.innerHTML += `
+    <div style="
+      background:#fff;
+      padding:10px;
+      border-radius:6px;
+      cursor:pointer;
+      text-align:center;
+      box-shadow:0 2px 6px rgba(0,0,0,0.1)
+    " onclick="location.href='product.html?id=${docu.id}'">
+      <img src="${r.images?.[0] || r.image}" 
+           style="height:120px;object-fit:contain;width:100%">
+      <p style="font-size:14px;margin:8px 0">${r.name}</p>
+      <strong>KES ${r.price}</strong>
+    </div>
+  `;
+});
+
 </script>
 
 </body>
